@@ -19,6 +19,13 @@ function requestFileType (filename) {
     }
 }
 
+function maintainConnection (connection, httpVer, socket) {
+    console.log("in maintain connection"); //todo: delete this
+    if (connection === "close" || (connection !== "keep-alive" && httpVer === "HTTP/1.0")) {
+        socket.end();
+    }
+}
+
 function Handler(socket, rootFolder) {
     var mySocket = socket;
     var myPath = rootFolder;
@@ -28,7 +35,7 @@ function Handler(socket, rootFolder) {
         buffer += data;
         var splittedRequest = buffer.split("\r\n");
 
-        console.log(splittedRequest); //todo: delete this
+        //console.log(splittedRequest); //todo: delete this
 
         var requestType = splittedRequest[0].split(" ")[0];
 
@@ -41,9 +48,13 @@ function Handler(socket, rootFolder) {
         else {
             var fpath = splittedRequest[0].split(" ")[1];
             var fileType = fpath.split(".");
+            var resultFileType;
             fileType = fileType[fileType.length - 1];
-            var resultFileType = requestFileType(fileType);
+            resultFileType = requestFileType(fileType);
             var httpVer = splittedRequest[0].split(" ")[2];
+            var connection = splittedRequest[2].split(": ")[1];
+            //console.log(connection); //todo: delete this
+            var afterResult;
 
             //console.log(httpVer); //todo: delete this
 
@@ -53,8 +64,10 @@ function Handler(socket, rootFolder) {
                 if (!fileExists) {
                     console.log("file does not exist");
                     socket.write(httpVer + " 404 Not Found\n");
+                    socket.write("Connection: " + connection + "\n");
                     socket.write("Content-Type: " + resultFileType[0] + "\n");
                     socket.write("Content-Length: 0\n");
+                    maintainConnection(afterResult, httpVer, socket);
                 }
                 else {
                     fs.stat(fpath, function(err, stat) {
@@ -62,18 +75,25 @@ function Handler(socket, rootFolder) {
                             console.log("error stat'ing file after found file exists. should be unreachable.");
                             throw err;
                         }
+
                         else {
+                            var fileAsStream = fs.createReadStream(fpath);
+                            var pipeEvent;
                             console.log("file exists");
                             socket.write(httpVer + " 200 OK\n");
+                            socket.write("Connection: " + connection + "\n");
                             socket.write("Content-Type: " + resultFileType + "\n");
                             socket.write("Content-Length: " + stat.size + "\n");
                             socket.write("\n");
-                            var fileAsStream = fs.createReadStream(fpath);
-                            fileAsStream.pipe(socket);
+                            pipeEvent = fileAsStream.pipe(socket);
+                            pipeEvent.on('finish', function() {maintainConnection(afterResult, httpVer, socket);});
                         }
                     });
                 }
             });
+            if (connection === "keep-alive") {
+                socket.setTimeout(2000);
+            }
         }
     };
 
