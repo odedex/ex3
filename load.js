@@ -62,5 +62,5 @@ var server = hujiServer.start(testPort, rootDir, function (e) {
         console.log("Test ended.");
         console.log("Number of errors: " + errorCount.toString());
         console.log("Number of successes: " + successes.toString());
-    },11 * stressLevel )
+    },11 * stressLevel * legalFiles.length )
 });

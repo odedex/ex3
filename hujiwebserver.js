@@ -1,3 +1,10 @@
+/**
+ * start the webserver
+ * @param port Port number to open the server on.
+ * @param rootFolder Path to the root folder of the server.
+ * @param callback Call at the end of the function.
+ * @returns {ServerObj} Server object.
+ */
 module.exports.start = function (port, rootFolder, callback) {
     var fs = require("fs");
 
@@ -12,19 +19,31 @@ module.exports.start = function (port, rootFolder, callback) {
         }
     });
 
-    var serverObj = new ServerObj(port, rootFolder);
+    // If folder path is ok, create a new server object and return it.
+    var serverObj = new ServerObj(port, rootFolder, callback);
     serverObj.startServer(callback);
     return serverObj;
 };
 
-function ServerObj(port, rootFolder){
+/**
+ * Constructor function for the server object.
+ * Decides all socket behaviour of sockets connecting to the server.
+ * @param port Port the server listens to.
+ * @param rootFolder Root folder of the server.
+ * @returns {ServerObj} Server object.
+ * @constructor
+ */
+function ServerObj(port, rootFolder, callback){
     var net = require("net");
     var serverPort = port;
     var serverFolder = rootFolder;
     var serverStarted = false;
+
+    // Change server port and folder to be read only.
     Object.defineProperty(this, "serverPort", {writeable: false, readable: true});
     Object.defineProperty(this, "serverFolder", {writeable: false, readable: true});
 
+    // Create the server.
     this.server = net.createServer(function(socket) {
         console.log ("new client on server");
         var hujinet = require("./hujinet.js");
@@ -64,6 +83,12 @@ function ServerObj(port, rootFolder){
         });
     });
 
+    this.server.on("error", function (err) {
+        console.log("Server encountered error: " + err);
+        callback(err);
+
+    });
+
     this.close = function(callback) {
         this.server.close(callback);
     };
@@ -71,7 +96,6 @@ function ServerObj(port, rootFolder){
     this.startServer = function(callback) {
         serverStarted = true;
         this.server.listen(port, function() {
-            //console.log("server is live"); //todo: delete this
             callback();
         })
     };

@@ -1,7 +1,8 @@
 /**
- * Created by OdedA on 20-Dec-15.
+ * Parses the file type into the appropriate html file type.
+ * @param fileType File type to parse.
+ * @returns {*[]} List with the file type, and boolean whether its a text file or not.
  */
-
 function requestFileType (fileType) {
     switch (fileType.toLowerCase()) {
         case "jpg":
@@ -23,18 +24,21 @@ function requestFileType (fileType) {
         case "css":
             return ["text/css",true];
         default:
-            return ["bad",true];
+            return ["bad",false];
     }
 }
 
+/**
+ * Function to parse an html request into a request object.
+ * The function can handle the event which the header comes in multiple requests.
+ * @param request Html request.
+ * @param reqObj Object to populate.
+ * @param callback Function to execute with the request object as parameter.
+ */
 module.exports.parseRequest = function(request, reqObj, callback) {
-    //console.log("request:"); //todo: delete this
-    //console.log(request); //todo: delete this
     if (request !== undefined) {
         var requestLines = request;
         requestLines = requestLines.toString().split("\r\n");
-        //console.log("\r\nin request parser. parsed lines:"); //todo: delete this
-        //console.log(requestLines); //todo: delete this
         if (typeof (reqObj.requestType) === 'undefined') {
             try {
                 var temp;
@@ -62,6 +66,4 @@ module.exports.parseRequest = function(request, reqObj, callback) {
         });
     }
     callback(reqObj);
-
-
 };

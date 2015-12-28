@@ -1,30 +1,38 @@
-
-
+/**
+ * Function to close a socket connection, depending on the http request
+ * @param connection Connection header in the http request.
+ * @param httpVer HTTP version (1.0 or 1.1) of the http request.
+ * @param socket The socket to close if needed.
+ */
 function maintainConnection (connection, httpVer, socket) {
-    console.log("in maintain connection"); //todo: delete this
     if (connection === "close" || (connection !== "keep-alive" && httpVer === "HTTP/1.0")) {
         socket.end();
     }
 }
 
-//function RequestObj () {
-//    return this;
-//}
-
+/**
+ * Handler object created for the server.
+ * @param socket Socket to handle.
+ * @param rootFolder Root folder path of the server.
+ * @returns {Handler} Request handler object
+ * @constructor
+ */
 function Handler(socket, rootFolder) {
-    var mySocket = socket;
-    var myPath = rootFolder;
-    var reqObj = {};
     var hujirequestparser = require("./hujirequestparser.js");
     this.parseData = function (data) {
-        //console.log ("data parse request"); //todo: delete this
+        var reqObj = {};
         reqObj = hujirequestparser.parseRequest(data, reqObj, function(reqObj) {
+
+            // After parsing the request, make sure the file path requested is within in the root folder.
             var path = require("path");
             var fullPath = rootFolder + reqObj.fpath;
             var absRootPath = path.resolve(rootFolder);
             var absFilePath = path.resolve(fullPath);
-            //console.log(reqObj); //todo: delete this
+
+            // If the request was successfully parsed.
             if (reqObj.validRequest !== 'undefined' && reqObj.validRequest) {
+
+                // If the request type was not GET or the file type requested is not supported, return 500.
                 if (reqObj.requestType !== "GET" || reqObj.fileTypeHtml[0] === "bad" ||
                     absFilePath.slice(0, absRootPath.length) != absRootPath) {
                     console.log("500: bad http request.");
@@ -35,9 +43,10 @@ function Handler(socket, rootFolder) {
                     maintainConnection(reqObj.connection, reqObj.httpVer, socket);
                 }
                 else {
-                    //console.log(reqObj); //todo: delete this
                     var fs = require("fs");
                     fs.exists(fullPath, function(fileExists) {
+
+                        // If the file requested does not exist, return 404.
                         if (!fileExists) {
                             console.log("404: file does not exist: " + fullPath);
                             socket.write(reqObj.httpVer + " 404 Not Found\r\n");
@@ -48,26 +57,23 @@ function Handler(socket, rootFolder) {
                             maintainConnection(reqObj.connection, reqObj.httpVer, socket);
                         }
                         else {
+                            // Read the requested file, create a response and send it to the socket.
                             fs.stat(fullPath, function(err, stat) {
-                                if (err) {
-                                    console.log("error stat'ing file after found file exists. should be unreachable.");
-                                    throw err;
-                                }
-                                else {
-                                    var fileAsStream = fs.createReadStream(fullPath);
-                                    var pipeEvent;
-                                    console.log("200: file exists");
-                                    socket.write(reqObj.httpVer + " 200 OK\r\n");
-                                    socket.write("Connection: " + reqObj.connection + "\r\n");
-                                    socket.write("Content-Type: " + reqObj.fileTypeHtml + "\r\n");
-                                    socket.write("Content-Length: " + stat.size + "\r\n");
-                                    socket.write("\r\n");
-                                    pipeEvent = fileAsStream.pipe(socket);
-                                    pipeEvent.on('finish', function() {maintainConnection(reqObj.connection, reqObj.httpVer, socket);});
-                                }
+                                var fileAsStream = fs.createReadStream(fullPath);
+                                var pipeEvent;
+                                console.log("200: file exists");
+                                socket.write(reqObj.httpVer + " 200 OK\r\n");
+                                socket.write("Connection: " + reqObj.connection + "\r\n");
+                                socket.write("Content-Type: " + reqObj.fileTypeHtml + "\r\n");
+                                socket.write("Content-Length: " + stat.size + "\r\n");
+                                socket.write("\r\n");
+                                pipeEvent = fileAsStream.pipe(socket);
+                                // When the data finishes piping, close the connection if it needs to be closed.
+                                pipeEvent.on('finish', function() {maintainConnection(reqObj.connection, reqObj.httpVer, socket);});
                             });
                         }
                     });
+                    // If the socket has a keep-alive connection, re-set the timeout period.
                     if (reqObj.connection === "keep-alive") {
                         console.log("socket kept alive");
                         socket.setTimeout(2000);
@@ -75,15 +81,8 @@ function Handler(socket, rootFolder) {
                 }
             }
         });
-
-
-        //console.log(splittedRequest); //todo: delete this
-
-
     };
-
     return this;
 }
-
 
 module.exports.Handler = Handler;
