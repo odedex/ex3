@@ -21,6 +21,7 @@ function ServerObj(port, rootFolder){
     var net = require("net");
     var serverPort = port;
     var serverFolder = rootFolder;
+    var serverStarted = false;
     Object.defineProperty(this, "serverPort", {writeable: false, readable: true});
     Object.defineProperty(this, "serverFolder", {writeable: false, readable: true});
 
@@ -53,6 +54,14 @@ function ServerObj(port, rootFolder){
             console.log("socket error caught");
             callback(new Error(err.errno))
         });
+
+        socket.on("end", function () {
+            console.log("socket closed");
+        });
+
+        socket.on("hangup", function() {
+            console.log("in hang up");
+        });
     });
 
     this.close = function(callback) {
@@ -60,10 +69,21 @@ function ServerObj(port, rootFolder){
     };
 
     this.startServer = function(callback) {
+        serverStarted = true;
         this.server.listen(port, function() {
             //console.log("server is live"); //todo: delete this
             callback();
         })
+    };
+
+    this.stop = function stop(callback) {
+        console.log("server stopped");
+        if (serverStarted) {
+            this.server.close(callback);
+        }
+        else {
+            console.log ("requested close for already closed server");
+        }
     };
 
     return this;
