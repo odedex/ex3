@@ -1,0 +1,68 @@
+body {
+    background-color: azure;
+}
+
+.contentPage {
+    text-align: center;
+    padding-top: 10%;
+}
+
+#page1 {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+#page2 {
+    font-family: "Comic Sans MS", cursive, sans-serif;
+}
+
+#page3 {
+    padding-top: 5%;
+}
+
+#textDiv {
+    text-align: center;
+    padding-bottom: 2%;
+}
+
+#imagesDiv {
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    background-image: url('rick.jpg');
+    background-size:contain;
+    height: 180px;
+    width: 240px;
+}
+
+#imagesDiv:hover {
+    background-image: url('roll.png');
+
+}
+
+#buttonsDiv {
+    text-align: center;
+}
+
+.actionButton {
+    font-size: 25px;
+    color: white;
+    background-color: #4E80BE;
+    border: solid;
+    border-color: white;
+    border-width: 5px;
+    border-radius: 7px;
+    margin-top: 2%;
+    padding-left: 2%;
+    padding-right: 2%;
+}
+
+textarea {
+    resize: none;
+    width: 15%;
+}
+
+.calculator {
+    margin-top: 1%;
+}
